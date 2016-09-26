@@ -40,7 +40,7 @@ if LOG_FILENAME is not None:
 
 teams = [{'contains': 'Chicago', 'acronym': 'CHI', 'link': 'http://www.chicago-fire.com'}
 	,{'contains': 'Colorado', 'acronym': 'COL', 'link': 'http://www.coloradorapids.com'}
-	,{'contains': 'Columbus', 'acronym': 'CLB', 'link': 'http://www.thecrew.com'}
+	,{'contains': 'Columbus', 'acronym': 'CLB', 'link': 'http://www.columbuscrewsc.com'}
 	,{'contains': 'Dallas', 'acronym': 'FCD', 'link': 'http://www.fcdallas.com'}
 	,{'contains': 'D.C. United', 'acronym': 'DC', 'link': 'http://www.dcunited.com'}
 	,{'contains': 'Houston', 'acronym': 'HOU', 'link': 'http://www.houstondynamo.com'}
@@ -48,7 +48,7 @@ teams = [{'contains': 'Chicago', 'acronym': 'CHI', 'link': 'http://www.chicago-f
 	,{'contains': 'Galaxy', 'acronym': 'LAG', 'link': 'http://www.lagalaxy.com'}
 	,{'contains': 'Portland', 'acronym': 'POR', 'link': 'http://www.portlandtimbers.com'}
 	,{'contains': 'New England', 'acronym': 'NE', 'link': 'http://www.revolutionsoccer.net'}
-	,{'contains': 'Salt Lake', 'acronym': 'RSL', 'link': 'http://www.realsaltlake.com'}
+	,{'contains': 'Salt Lake', 'acronym': 'RSL', 'link': 'http://rsl.com'}
 	,{'contains': 'New York City', 'acronym': 'NYC', 'link': 'http://www.nycfc.com/'}
 	,{'contains': 'San Jose', 'acronym': 'SJ', 'link': 'http://www.sjearthquakes.com'}
 	,{'contains': 'Red Bull', 'acronym': 'NYRB', 'link': 'http://www.newyorkredbulls.com'}
