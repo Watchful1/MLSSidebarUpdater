@@ -9,10 +9,13 @@ import requests
 import datetime
 import time
 import sys
+import traceback
 
 ### Config ###
 LOG_FOLDER_NAME = "logs"
 SUBREDDIT = "subtestbot1"
+BOT_NAME = ""
+OWNER_NAME = "Watchful1"
 
 ### Logging setup ###
 LOG_LEVEL = logging.DEBUG
@@ -188,74 +191,85 @@ while True:
 	startTime = time.perf_counter()
 	log.debug("Starting run")
 
-	standings = parseTable()
+	tableStrList = []
+	try:
+		standings = parseTable()
 
-	today = datetime.date.today()
-	lastMonday = today - datetime.timedelta(days=today.weekday())
+		tableStrList.append("**[Standings](http://www.mlssoccer.com/standings)**\n\n")
+		tableStrList.append("*")
+		tableStrList.append(datetime.datetime.now().strftime("%m/%d/%y"))
+		tableStrList.append("*\n\n")
+		tableStrList.append("Pos | Team | Pts | GP | GF | GD\n")
+		tableStrList.append(":--:|:--:|:--:|:--:|:--:|:--:\n")
 
-	schedule = parseWeek(lastMonday)
-	schedule += parseWeek(lastMonday + datetime.timedelta(weeks=1))
+		for team in standings:
+			tableStrList.append(team['ranking'])
+			tableStrList.append(" | ")
+			tableStrList.append(getTeamLink(team['name']))
+			tableStrList.append(" | **")
+			tableStrList.append(team['points'])
+			tableStrList.append("** | ")
+			tableStrList.append(team['played'])
+			tableStrList.append(" | ")
+			tableStrList.append(team['goalsFor'])
+			tableStrList.append(" | ")
+			tableStrList.append(team['goalDiff'])
+			tableStrList.append(" |\n")
+
+		tableStrList.append("\n\n\n")
+	except Exception as err:
+		tableStrList = []
+		log.warning("Exception parsing table")
+		log.warning(traceback.format_exc())
+
+	scheduleStrList = []
+	try:
+		today = datetime.date.today()
+		lastMonday = today - datetime.timedelta(days=today.weekday())
+
+		schedule = parseWeek(lastMonday)
+		schedule += parseWeek(lastMonday + datetime.timedelta(weeks=1))
+
+		scheduleStrList.append("-----\n")
+		scheduleStrList.append("#Schedule\n")
+		scheduleStrList.append("*All times ET*\n\n")
+		scheduleStrList.append("Time | Home | Away | TV\n")
+		scheduleStrList.append(":--:|:--:|:--:|:--:|\n")
+
+		i = 0
+		lastDate = None
+		for game in schedule:
+			if game['datetime'] < datetime.datetime.now():
+				continue
+
+			if game['comp'] != "MLS":
+				continue
+
+			if lastDate != game['datetime'].date():
+				lastDate = game['datetime'].date()
+				scheduleStrList.append("**")
+				scheduleStrList.append(game['datetime'].strftime("%m/%d"))
+				scheduleStrList.append("**|\n")
+
+			scheduleStrList.append(game['datetime'].strftime("%I:%M"))
+			scheduleStrList.append(" | ")
+			scheduleStrList.append(getTeamLink(game['home']))
+			scheduleStrList.append(" | ")
+			scheduleStrList.append(getTeamLink(game['away']))
+			scheduleStrList.append(" | ")
+			scheduleStrList.append(getChannelLink(game['tv']))
+			scheduleStrList.append("|\n")
+
+			i += 1
+			if i >= 8:
+				break
+	except Exception as err:
+		scheduleStrList = []
+		log.warning("Exception parsing schedule")
+		log.warning(traceback.format_exc())
 
 	subreddit = r.get_subreddit(SUBREDDIT)
-
-	strList = []
-	strList.append("**[Standings](http://www.mlssoccer.com/standings)**\n\n")
-	strList.append("*")
-	strList.append(datetime.datetime.now().strftime("%m/%d/%y"))
-	strList.append("*\n\n")
-	strList.append("Pos | Team | Pts | GP | GF | GD\n")
-	strList.append(":--:|:--:|:--:|:--:|:--:|:--:\n")
-
-	for team in standings:
-		strList.append(team['ranking'])
-		strList.append(" | ")
-		strList.append(getTeamLink(team['name']))
-		strList.append(" | **")
-		strList.append(team['points'])
-		strList.append("** | ")
-		strList.append(team['played'])
-		strList.append(" | ")
-		strList.append(team['goalsFor'])
-		strList.append(" | ")
-		strList.append(team['goalDiff'])
-		strList.append(" |\n")
-
-	strList.append("\n\n\n")
-	strList.append("-----\n")
-	strList.append("#Schedule\n")
-	strList.append("*All times ET*\n\n")
-	strList.append("Time | Home | Away | TV\n")
-	strList.append(":--:|:--:|:--:|:--:|\n")
-
-	i = 0
-	lastDate = None
-	for game in schedule:
-		if game['datetime'] < datetime.datetime.now():
-			continue
-
-		if game['comp'] != "MLS":
-			continue
-
-		if lastDate != game['datetime'].date():
-			lastDate = game['datetime'].date()
-			strList.append("**")
-			strList.append(game['datetime'].strftime("%m/%d"))
-			strList.append("**|\n")
-
-		strList.append(game['datetime'].strftime("%I:%M"))
-		strList.append(" | ")
-		strList.append(getTeamLink(game['home']))
-		strList.append(" | ")
-		strList.append(getTeamLink(game['away']))
-		strList.append(" | ")
-		strList.append(getChannelLink(game['tv']))
-		strList.append("|\n")
-
-		i += 1
-		if i >= 8:
-			break
-
-	subreddit.update_settings(description=''.join(strList))
+	subreddit.set_settings(title=subreddit.get_settings()['title'], description=''.join(tableStrList+scheduleStrList))
 
 	log.debug("Run complete after: %d", int(time.perf_counter() - startTime))
 	if once:
