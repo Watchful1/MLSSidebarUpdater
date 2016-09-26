@@ -10,10 +10,12 @@ import datetime
 import time
 import sys
 import traceback
+import json
 
 ### Config ###
 LOG_FOLDER_NAME = "logs"
-SUBREDDIT = "subtestbot1"
+SUBREDDIT = "mls"
+USER_AGENT = "MLSSideBarUpdater (by /u/Watchful1)"
 
 ### Logging setup ###
 LOG_LEVEL = logging.DEBUG
@@ -181,7 +183,7 @@ once = False
 if len(sys.argv) > 1 and sys.argv[1] == 'once':
 	once = True
 
-r = praw.Reddit(user_agent="MLSSideBarUpdater (by /u/Watchful1)", log_request=0)
+r = praw.Reddit(user_agent=USER_AGENT, log_request=0)
 o = OAuth2Util.OAuth2Util(r)
 o.refresh(force=True)
 
@@ -266,8 +268,18 @@ while True:
 		log.warning("Exception parsing schedule")
 		log.warning(traceback.format_exc())
 
+	baseSidebar = ""
+	try:
+		resp = requests.get(url="https://www.reddit.com/r/"+SUBREDDIT+"/wiki/sidebar-template.json", headers={'User-Agent': USER_AGENT})
+		jsonData = json.loads(resp.text)
+		baseSidebar = jsonData['data']['content_md'] + "\n"
+	except Exception as err:
+		baseSidebar = ""
+		log.warning("Exception parsing schedule")
+		log.warning(traceback.format_exc())
+
 	subreddit = r.get_subreddit(SUBREDDIT)
-	subreddit.set_settings(title=subreddit.get_settings()['title'], description=''.join(tableStrList+scheduleStrList))
+	subreddit.update_settings(description=baseSidebar+''.join(tableStrList+scheduleStrList))
 
 	log.debug("Run complete after: %d", int(time.perf_counter() - startTime))
 	if once:
