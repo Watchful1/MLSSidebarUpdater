@@ -14,8 +14,6 @@ import traceback
 ### Config ###
 LOG_FOLDER_NAME = "logs"
 SUBREDDIT = "subtestbot1"
-BOT_NAME = ""
-OWNER_NAME = "Watchful1"
 
 ### Logging setup ###
 LOG_LEVEL = logging.DEBUG
@@ -39,25 +37,25 @@ if LOG_FILENAME is not None:
 
 
 teams = [{'contains': 'Chicago', 'acronym': 'CHI', 'link': 'http://www.chicago-fire.com'}
-	, {'contains': 'Colorado', 'acronym': 'COL', 'link': 'http://www.coloradorapids.com'}
-	, {'contains': 'Columbus', 'acronym': 'CLB', 'link': 'http://www.thecrew.com'}
-	, {'contains': 'Dallas', 'acronym': 'FCD', 'link': 'http://www.fcdallas.com'}
-	, {'contains': 'D.C. United', 'acronym': 'DC', 'link': 'http://www.dcunited.com'}
-	, {'contains': 'Houston', 'acronym': 'HOU', 'link': 'http://www.houstondynamo.com'}
-	, {'contains': 'Montreal', 'acronym': 'MTL', 'link': 'http://www.impactmontreal.com/en'}
-	, {'contains': 'Galaxy', 'acronym': 'LAG', 'link': 'http://www.lagalaxy.com'}
-	, {'contains': 'Portland', 'acronym': 'POR', 'link': 'http://www.portlandtimbers.com'}
-	, {'contains': 'New England', 'acronym': 'NE', 'link': 'http://www.revolutionsoccer.net'}
-	, {'contains': 'Salt Lake', 'acronym': 'RSL', 'link': 'http://www.realsaltlake.com'}
-	, {'contains': 'New York City', 'acronym': 'NYC', 'link': 'http://www.nycfc.com/'}
-	, {'contains': 'San Jose', 'acronym': 'SJ', 'link': 'http://www.sjearthquakes.com'}
-	, {'contains': 'Red Bull', 'acronym': 'NYRB', 'link': 'http://www.newyorkredbulls.com'}
-	, {'contains': 'Orlando', 'acronym': 'OCSC', 'link': 'http://www.orlandocitysc.com/'}
-	, {'contains': 'Seattle', 'acronym': 'SEA', 'link': 'http://www.soundersfc.com'}
-	, {'contains': 'Philadelphia', 'acronym': 'PHI', 'link': 'http://www.philadelphiaunion.com'}
-	, {'contains': 'Sporting', 'acronym': 'SKC', 'link': 'http://www.sportingkc.com'}
-	, {'contains': 'Toronto', 'acronym': 'TFC', 'link': 'http://torontofc.ca'}
-	, {'contains': 'Vancouver', 'acronym': 'VAN', 'link': 'http://www.whitecapsfc.com'}
+	,{'contains': 'Colorado', 'acronym': 'COL', 'link': 'http://www.coloradorapids.com'}
+	,{'contains': 'Columbus', 'acronym': 'CLB', 'link': 'http://www.thecrew.com'}
+	,{'contains': 'Dallas', 'acronym': 'FCD', 'link': 'http://www.fcdallas.com'}
+	,{'contains': 'D.C. United', 'acronym': 'DC', 'link': 'http://www.dcunited.com'}
+	,{'contains': 'Houston', 'acronym': 'HOU', 'link': 'http://www.houstondynamo.com'}
+	,{'contains': 'Montreal', 'acronym': 'MTL', 'link': 'http://www.impactmontreal.com/en'}
+	,{'contains': 'Galaxy', 'acronym': 'LAG', 'link': 'http://www.lagalaxy.com'}
+	,{'contains': 'Portland', 'acronym': 'POR', 'link': 'http://www.portlandtimbers.com'}
+	,{'contains': 'New England', 'acronym': 'NE', 'link': 'http://www.revolutionsoccer.net'}
+	,{'contains': 'Salt Lake', 'acronym': 'RSL', 'link': 'http://www.realsaltlake.com'}
+	,{'contains': 'New York City', 'acronym': 'NYC', 'link': 'http://www.nycfc.com/'}
+	,{'contains': 'San Jose', 'acronym': 'SJ', 'link': 'http://www.sjearthquakes.com'}
+	,{'contains': 'Red Bull', 'acronym': 'NYRB', 'link': 'http://www.newyorkredbulls.com'}
+	,{'contains': 'Orlando', 'acronym': 'OCSC', 'link': 'http://www.orlandocitysc.com/'}
+	,{'contains': 'Seattle', 'acronym': 'SEA', 'link': 'http://www.soundersfc.com'}
+	,{'contains': 'Philadelphia', 'acronym': 'PHI', 'link': 'http://www.philadelphiaunion.com'}
+	,{'contains': 'Sporting', 'acronym': 'SKC', 'link': 'http://www.sportingkc.com'}
+	,{'contains': 'Toronto', 'acronym': 'TFC', 'link': 'http://torontofc.ca'}
+	,{'contains': 'Vancouver', 'acronym': 'VAN', 'link': 'http://www.whitecapsfc.com'}
 ]
 
 
