@@ -50,6 +50,7 @@ teams = [{'contains': 'Chicago', 'acronym': 'CHI', 'link': 'http://www.chicago-f
 	,{'contains': 'New England', 'acronym': 'NE', 'link': 'http://www.revolutionsoccer.net'}
 	,{'contains': 'Salt Lake', 'acronym': 'RSL', 'link': 'http://rsl.com'}
 	,{'contains': 'New York City', 'acronym': 'NYC', 'link': 'http://www.nycfc.com/'}
+	,{'contains': 'NYCFC', 'acronym': 'NYC', 'link': 'http://www.nycfc.com/'}
 	,{'contains': 'San Jose', 'acronym': 'SJ', 'link': 'http://www.sjearthquakes.com'}
 	,{'contains': 'Red Bull', 'acronym': 'NYRB', 'link': 'http://www.newyorkredbulls.com'}
 	,{'contains': 'Orlando', 'acronym': 'OCSC', 'link': 'http://www.orlandocitysc.com/'}
@@ -85,6 +86,30 @@ def getChannelLink(name):
 
 
 ### Parse table ###
+def compareTeams(team1, team2):
+	if int(team1['points']) > int(team2['points']):
+		return True
+	elif int(team1['points']) < int(team2['points']):
+		return False
+	else:
+		if int(team1['wins']) > int(team2['wins']):
+			return True
+		elif int(team1['wins']) < int(team2['wins']):
+			return False
+		else:
+			if int(team1['goalDiff']) > int(team2['goalDiff']):
+				return True
+			elif int(team1['goalDiff']) < int(team2['goalDiff']):
+				return False
+			else:
+				if int(team1['goalsFor']) > int(team2['goalsFor']):
+					return True
+				elif int(team1['goalsFor']) < int(team2['goalsFor']):
+					return False
+				else:
+					log.error("Ran out of tiebreakers")
+					return True
+
 def parseTable():
 	page = requests.get("http://www.mlssoccer.com/standings")
 	tree = html.fromstring(page.content)
@@ -100,6 +125,7 @@ def parseTable():
 		,{'title': 'Games Played', 'name': 'played'}
 		,{'title': 'Goals For', 'name': 'goalsFor'}
 		,{'title': 'Goal Difference', 'name': 'goalDiff'}
+		,{'title': 'Wins', 'name': 'wins'}
 	]
 
 	for element in elements:
@@ -110,7 +136,7 @@ def parseTable():
 	firstCount = 0
 	secondCount = firstConf['size']
 	while True:
-		if int(standings[firstCount]['points']) > int(standings[secondCount]['points']):
+		if compareTeams(standings[firstCount], standings[secondCount]):
 			standings[firstCount]['ranking'] = firstConf['name'] + str(firstCount + 1)
 			sortedStandings.append(standings[firstCount])
 			firstCount += 1
@@ -119,7 +145,7 @@ def parseTable():
 			sortedStandings.append(standings[secondCount])
 			secondCount += 1
 
-		if firstCount == firstConf['size'] - 1:
+		if firstCount == firstConf['size']:
 			while True:
 				standings[secondCount]['ranking'] = secondConf['name'] + str(secondCount - firstConf['size'] + 1)
 				sortedStandings.append(standings[secondCount])
@@ -130,7 +156,7 @@ def parseTable():
 
 			break
 
-		if secondCount == firstConf['size'] + secondConf['size'] - 1:
+		if secondCount == firstConf['size'] + secondConf['size']:
 			while True:
 				standings[firstCount]['ranking'] = firstConf['name'] + str(firstCount + 1)
 				sortedStandings.append(standings[firstCount])
@@ -171,7 +197,10 @@ def parseWeek(date):
 				schedule[i][element['name']] = item[element['child']].text
 
 	for match in schedule:
-		match['datetime'] = datetime.datetime.strptime(match['date']+" "+str(datetime.datetime.now().year)+" "+match['time'], "%a, %b %d %Y %I:%M %p ET")
+		try:
+			match['datetime'] = datetime.datetime.strptime(match['date']+" "+str(datetime.datetime.now().year)+" "+match['time'], "%a, %b %d %Y %I:%M %p ET")
+		except Exception as err:
+			match['datetime'] = None
 
 	return schedule
 
@@ -191,38 +220,37 @@ while True:
 	startTime = time.perf_counter()
 	log.debug("Starting run")
 
-	tableStrList = []
+	strList = []
 	try:
 		standings = parseTable()
 
-		tableStrList.append("**[Standings](http://www.mlssoccer.com/standings)**\n\n")
-		tableStrList.append("*")
-		tableStrList.append(datetime.datetime.now().strftime("%m/%d/%y"))
-		tableStrList.append("*\n\n")
-		tableStrList.append("Pos | Team | Pts | GP | GF | GD\n")
-		tableStrList.append(":--:|:--:|:--:|:--:|:--:|:--:\n")
+		strList.append("**[Standings](http://www.mlssoccer.com/standings)**\n\n")
+		strList.append("*")
+		strList.append(datetime.datetime.now().strftime("%m/%d/%y"))
+		strList.append("*\n\n")
+		strList.append("Pos | Team | Pts | GP | GF | GD\n")
+		strList.append(":--:|:--:|:--:|:--:|:--:|:--:\n")
 
 		for team in standings:
-			tableStrList.append(team['ranking'])
-			tableStrList.append(" | ")
-			tableStrList.append(getTeamLink(team['name']))
-			tableStrList.append(" | **")
-			tableStrList.append(team['points'])
-			tableStrList.append("** | ")
-			tableStrList.append(team['played'])
-			tableStrList.append(" | ")
-			tableStrList.append(team['goalsFor'])
-			tableStrList.append(" | ")
-			tableStrList.append(team['goalDiff'])
-			tableStrList.append(" |\n")
+			strList.append(team['ranking'])
+			strList.append(" | ")
+			strList.append(getTeamLink(team['name']))
+			strList.append(" | **")
+			strList.append(team['points'])
+			strList.append("** | ")
+			strList.append(team['played'])
+			strList.append(" | ")
+			strList.append(team['goalsFor'])
+			strList.append(" | ")
+			strList.append(team['goalDiff'])
+			strList.append(" |\n")
 
-		tableStrList.append("\n\n\n")
+		strList.append("\n\n\n")
 	except Exception as err:
-		tableStrList = []
 		log.warning("Exception parsing table")
 		log.warning(traceback.format_exc())
+		continue
 
-	scheduleStrList = []
 	try:
 		today = datetime.date.today()
 		lastMonday = today - datetime.timedelta(days=today.weekday())
@@ -230,11 +258,11 @@ while True:
 		schedule = parseWeek(lastMonday)
 		schedule += parseWeek(lastMonday + datetime.timedelta(weeks=1))
 
-		scheduleStrList.append("-----\n")
-		scheduleStrList.append("#Schedule\n")
-		scheduleStrList.append("*All times ET*\n\n")
-		scheduleStrList.append("Time | Home | Away | TV\n")
-		scheduleStrList.append(":--:|:--:|:--:|:--:|\n")
+		strList.append("-----\n")
+		strList.append("#Schedule\n")
+		strList.append("*All times ET*\n\n")
+		strList.append("Time | Home | Away | TV\n")
+		strList.append(":--:|:--:|:--:|:--:|\n")
 
 		i = 0
 		lastDate = None
@@ -247,26 +275,26 @@ while True:
 
 			if lastDate != game['datetime'].date():
 				lastDate = game['datetime'].date()
-				scheduleStrList.append("**")
-				scheduleStrList.append(game['datetime'].strftime("%m/%d"))
-				scheduleStrList.append("**|\n")
+				strList.append("**")
+				strList.append(game['datetime'].strftime("%m/%d"))
+				strList.append("**|\n")
 
-			scheduleStrList.append(game['datetime'].strftime("%I:%M"))
-			scheduleStrList.append(" | ")
-			scheduleStrList.append(getTeamLink(game['home']))
-			scheduleStrList.append(" | ")
-			scheduleStrList.append(getTeamLink(game['away']))
-			scheduleStrList.append(" | ")
-			scheduleStrList.append(getChannelLink(game['tv']))
-			scheduleStrList.append("|\n")
+			strList.append(game['datetime'].strftime("%I:%M"))
+			strList.append(" | ")
+			strList.append(getTeamLink(game['home']))
+			strList.append(" | ")
+			strList.append(getTeamLink(game['away']))
+			strList.append(" | ")
+			strList.append(getChannelLink(game['tv']))
+			strList.append("|\n")
 
 			i += 1
 			if i >= 8:
 				break
 	except Exception as err:
-		scheduleStrList = []
 		log.warning("Exception parsing schedule")
 		log.warning(traceback.format_exc())
+		continue
 
 	baseSidebar = ""
 	try:
@@ -274,12 +302,12 @@ while True:
 		jsonData = json.loads(resp.text)
 		baseSidebar = jsonData['data']['content_md'] + "\n"
 	except Exception as err:
-		baseSidebar = ""
 		log.warning("Exception parsing schedule")
 		log.warning(traceback.format_exc())
+		continue
 
 	subreddit = r.get_subreddit(SUBREDDIT)
-	subreddit.update_settings(description=baseSidebar+''.join(tableStrList+scheduleStrList))
+	subreddit.update_settings(description=baseSidebar+''.join(strList))
 
 	log.debug("Run complete after: %d", int(time.perf_counter() - startTime))
 	if once:
