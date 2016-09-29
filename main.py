@@ -67,7 +67,7 @@ def getTeamLink(name):
 		if item['contains'] in name:
 			return "["+item['acronym']+"]("+item['link']+")"
 
-	return "[UNK](http://www.mlssoccer.com/)"
+	return ""
 
 
 channels = [{'contains': 'ESPN2', 'link': 'http://espn.go.com/watchespn/index/_/sport/soccer-futbol/channel/espn2'}
@@ -176,35 +176,37 @@ def parseWeek(date):
 	tree = html.fromstring(page.content)
 
 	schedule = []
-	for i, item in enumerate(tree.xpath("//span[@class='sb-club-name-full']/text()")):
-		if i % 2 == 0:
-			schedule.append({'home': item})
-		else:
-			schedule[int((i - 1) / 2)]['away'] = item
+	for i, element in enumerate(tree.xpath("//*[contains(@class,'ml-link')]")):
+		match = {}
+		clubNames = element.xpath(".//*[contains(@class,'sb-club-name-full')]/text()")
+		if len(clubNames) < 2:
+			continue
+		match['home'] = clubNames[0]
+		match['away'] = clubNames[1]
 
-	elements = [{'title': 'sb-match-date', 'type': 'div', 'name': 'date', 'child': None}
-		,{'title': 'sb-match-time', 'type': 'div', 'name': 'time', 'child': None}
-		,{'title': 'sb-match-comp', 'type': 'div', 'name': 'comp', 'child': None}
-		,{'title': 'sb-tv-listing', 'type': 'div', 'name': 'tv', 'child': 0}
-	]
-
-	for element in elements:
-		for i, item in enumerate(tree.xpath("//" + element['type'] + "[@class='" + element['title'] + "']"+
-				("/text()" if element['child'] is None else ""))):
-			if element['child'] is None:
-				schedule[i][element['name']] = item
-			else:
-				schedule[i][element['name']] = item[element['child']].text
-
-	for match in schedule:
+		date = element.xpath(".//*[contains(@class,'sb-match-date')]/text()")
+		time = element.xpath(".//*[contains(@class,'sb-match-time')]/text()")
+		if not len(date) or not len(time):
+			continue
 		try:
-			match['datetime'] = datetime.datetime.strptime(match['date']+" "+str(datetime.datetime.now().year)+" "+match['time'], "%a, %b %d %Y %I:%M %p ET")
+			match['datetime'] = datetime.datetime.strptime(date[0]+" "+str(datetime.datetime.now().year)+" "+time[0], "%a, %b %d %Y %I:%M %p ET")
 		except Exception as err:
-			match['datetime'] = None
+			continue
+
+		comp = element.xpath(".//*[contains(@class,'sb-match-comp')]/text()")
+		if not len(comp):
+			continue
+		match['comp'] = comp[0]
+
+		tv = element.xpath(".//*[contains(@class,'sb-tv-listing')]/span/text()")
+		if len(tv):
+			match['tv'] = tv[0]
+		else:
+			match['tv'] = ""
+
+		schedule.append(match)
 
 	return schedule
-
-
 
 log.debug("Connecting to reddit")
 
@@ -221,6 +223,7 @@ while True:
 	log.debug("Starting run")
 
 	strList = []
+	skip = False
 	try:
 		standings = parseTable()
 
@@ -249,7 +252,7 @@ while True:
 	except Exception as err:
 		log.warning("Exception parsing table")
 		log.warning(traceback.format_exc())
-		continue
+		skip = True
 
 	try:
 		today = datetime.date.today()
@@ -270,8 +273,18 @@ while True:
 			if game['datetime'] < datetime.datetime.now():
 				continue
 
+			homeLink = getTeamLink(game['home'])
+			awayLink = getTeamLink(game['away'])
 			if game['comp'] != "MLS":
-				continue
+				if "CONCACAF" in game['comp']:
+					if homeLink == "" and awayLink == "":
+						continue
+					elif homeLink == "":
+						homeLink = "[CCL](http://www.mlssoccer.com/)"
+					elif awayLink == "":
+						awayLink = "[CCL](http://www.mlssoccer.com/)"
+				else:
+					continue
 
 			if lastDate != game['datetime'].date():
 				lastDate = game['datetime'].date()
@@ -281,9 +294,9 @@ while True:
 
 			strList.append(game['datetime'].strftime("%I:%M"))
 			strList.append(" | ")
-			strList.append(getTeamLink(game['home']))
+			strList.append(homeLink)
 			strList.append(" | ")
-			strList.append(getTeamLink(game['away']))
+			strList.append(awayLink)
 			strList.append(" | ")
 			strList.append(getChannelLink(game['tv']))
 			strList.append("|\n")
@@ -294,7 +307,7 @@ while True:
 	except Exception as err:
 		log.warning("Exception parsing schedule")
 		log.warning(traceback.format_exc())
-		continue
+		skip = True
 
 	baseSidebar = ""
 	try:
@@ -304,10 +317,11 @@ while True:
 	except Exception as err:
 		log.warning("Exception parsing schedule")
 		log.warning(traceback.format_exc())
-		continue
+		skip = True
 
-	subreddit = r.get_subreddit(SUBREDDIT)
-	subreddit.update_settings(description=baseSidebar+''.join(strList))
+	if not skip:
+		subreddit = r.get_subreddit(SUBREDDIT)
+		subreddit.update_settings(description=baseSidebar+''.join(strList))
 
 	log.debug("Run complete after: %d", int(time.perf_counter() - startTime))
 	if once:
