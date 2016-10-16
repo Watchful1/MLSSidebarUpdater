@@ -336,7 +336,6 @@ while True:
 
 	if not skip:
 		subreddit = r.get_subreddit(SUBREDDIT)
-		log.debug(''.join(strList))
 		subreddit.update_settings(description=baseSidebar+''.join(strList))
 
 	log.debug("Run complete after: %d", int(time.perf_counter() - startTime))
