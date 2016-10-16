@@ -37,40 +37,37 @@ if LOG_FILENAME is not None:
 	log_fileHandler.setFormatter(log_formatter_file)
 	log.addHandler(log_fileHandler)
 
-
-teams = [{'contains': 'Chicago', 'acronym': 'CHI', 'link': 'http://www.chicago-fire.com'}
-	,{'contains': 'Colorado', 'acronym': 'COL', 'link': 'http://www.coloradorapids.com'}
-	,{'contains': 'Columbus', 'acronym': 'CLB', 'link': 'http://www.columbuscrewsc.com'}
-	,{'contains': 'Dallas', 'acronym': 'FCD', 'link': 'http://www.fcdallas.com'}
-	,{'contains': 'D.C. United', 'acronym': 'DC', 'link': 'http://www.dcunited.com'}
-	,{'contains': 'Houston', 'acronym': 'HOU', 'link': 'http://www.houstondynamo.com'}
-	,{'contains': 'Montreal', 'acronym': 'MTL', 'link': 'http://www.impactmontreal.com/en'}
-	,{'contains': 'Galaxy', 'acronym': 'LAG', 'link': 'http://www.lagalaxy.com'}
-	,{'contains': 'Portland', 'acronym': 'POR', 'link': 'http://www.portlandtimbers.com'}
-	,{'contains': 'New England', 'acronym': 'NE', 'link': 'http://www.revolutionsoccer.net'}
-	,{'contains': 'Salt Lake', 'acronym': 'RSL', 'link': 'http://rsl.com'}
-	,{'contains': 'New York City', 'acronym': 'NYC', 'link': 'http://www.nycfc.com/'}
-	,{'contains': 'NYCFC', 'acronym': 'NYC', 'link': 'http://www.nycfc.com/'}
-	,{'contains': 'San Jose', 'acronym': 'SJ', 'link': 'http://www.sjearthquakes.com'}
-	,{'contains': 'Red Bull', 'acronym': 'NYRB', 'link': 'http://www.newyorkredbulls.com'}
-	,{'contains': 'Orlando', 'acronym': 'OCSC', 'link': 'http://www.orlandocitysc.com/'}
-	,{'contains': 'Seattle', 'acronym': 'SEA', 'link': 'http://www.soundersfc.com'}
-	,{'contains': 'Philadelphia', 'acronym': 'PHI', 'link': 'http://www.philadelphiaunion.com'}
-	,{'contains': 'Sporting', 'acronym': 'SKC', 'link': 'http://www.sportingkc.com'}
-	,{'contains': 'Toronto', 'acronym': 'TFC', 'link': 'http://torontofc.ca'}
-	,{'contains': 'Vancouver', 'acronym': 'VAN', 'link': 'http://www.whitecapsfc.com'}
+comps = [{'name': 'MLS', 'link': 'http://www.mlssoccer.com/', 'acronym': 'MLS'}
+	,{'name': 'CONCACAF', 'link': 'https://www.facebook.com/concacafcom', 'acronym': 'CCL'}
 ]
+
+
+def getCompLink(compName):
+	for comp in comps:
+		if comp['name'] in compName:
+			return "["+comp['acronym']+"]("+comp['link']+")"
+
+	return ""
+
+teams = []
+
+def matchesTable(table, str):
+	for item in table:
+		if str in item:
+			return True
+	return False
 
 
 def getTeamLink(name):
 	for item in teams:
 		if item['contains'] in name:
-			return "["+item['acronym']+"]("+item['link']+")"
+			return ("["+item['acronym']+"]("+item['link']+")", item['include'])
 
-	return ""
+	return ("", False)
 
 
 channels = [{'contains': 'ESPN2', 'link': 'http://espn.go.com/watchespn/index/_/sport/soccer-futbol/channel/espn2'}
+    ,{'contains': 'ESPN ', 'link': 'http://www.espn.com/watchespn/index/_/sport/soccer-futbol/channel/espn'}
 	,{'contains': 'FS1', 'link': 'http://msn.foxsports.com/foxsports1'}
 	,{'contains': 'UniMás', 'link': 'http://tv.univision.com/unimas'}
 	,{'contains': 'MLS LIVE', 'link': 'http://live.mlssoccer.com/mlsmdl'}
@@ -224,6 +221,25 @@ while True:
 
 	strList = []
 	skip = False
+
+	teamText = requests.get("http://pastebin.com/raw/39Q82m7L").text
+	teams = []
+	firstLine = True
+	for teamLine in teamText.splitlines():
+		if firstLine:
+			firstLine = False
+			continue
+		teamArray = teamLine.split('|')
+		if len(teamArray) < 4:
+			log.warning("Couldn't parse team line: "+teamLine)
+			continue
+		team = {'contains': teamArray[0]
+			,'acronym': teamArray[1]
+			,'link': teamArray[2]
+			,'include': True if teamArray[3] == 'include' else False
+		}
+		teams.append(team)
+
 	try:
 		standings = parseTable()
 
@@ -237,7 +253,7 @@ while True:
 		for team in standings:
 			strList.append(team['ranking'])
 			strList.append(" | ")
-			strList.append(getTeamLink(team['name']))
+			strList.append(getTeamLink(team['name'])[0])
 			strList.append(" | **")
 			strList.append(team['points'])
 			strList.append("** | ")
@@ -270,21 +286,20 @@ while True:
 		i = 0
 		lastDate = None
 		for game in schedule:
+			log.debug(game)
 			if game['datetime'] < datetime.datetime.now():
 				continue
 
-			homeLink = getTeamLink(game['home'])
-			awayLink = getTeamLink(game['away'])
-			if game['comp'] != "MLS":
-				if "CONCACAF" in game['comp']:
-					if homeLink == "" and awayLink == "":
-						continue
-					elif homeLink == "":
-						homeLink = "[CCL](http://www.mlssoccer.com/)"
-					elif awayLink == "":
-						awayLink = "[CCL](http://www.mlssoccer.com/)"
-				else:
-					continue
+			homeLink, homeInclude = getTeamLink(game['home'])
+			awayLink, awayInclude = getTeamLink(game['away'])
+			if not homeInclude and not awayInclude:
+				continue
+
+			if homeLink == "":
+				homeLink = getCompLink(game['comp'])
+
+			if awayLink == "":
+				awayLink = getCompLink(game['comp'])
 
 			if lastDate != game['datetime'].date():
 				lastDate = game['datetime'].date()
@@ -321,6 +336,7 @@ while True:
 
 	if not skip:
 		subreddit = r.get_subreddit(SUBREDDIT)
+		log.debug(''.join(strList))
 		subreddit.update_settings(description=baseSidebar+''.join(strList))
 
 	log.debug("Run complete after: %d", int(time.perf_counter() - startTime))
