@@ -286,7 +286,6 @@ while True:
 		i = 0
 		lastDate = None
 		for game in schedule:
-			log.debug(game)
 			if game['datetime'] < datetime.datetime.now():
 				continue
 
