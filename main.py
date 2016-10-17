@@ -222,23 +222,32 @@ while True:
 	strList = []
 	skip = False
 
-	teamText = requests.get("http://pastebin.com/raw/39Q82m7L").text
 	teams = []
-	firstLine = True
-	for teamLine in teamText.splitlines():
-		if firstLine:
-			firstLine = False
-			continue
-		teamArray = teamLine.split('|')
-		if len(teamArray) < 4:
-			log.warning("Couldn't parse team line: "+teamLine)
-			continue
-		team = {'contains': teamArray[0]
-			,'acronym': teamArray[1]
-			,'link': teamArray[2]
-			,'include': True if teamArray[3] == 'include' else False
-		}
-		teams.append(team)
+	try:
+		resp = requests.get(url="https://www.reddit.com/r/"+SUBREDDIT+"/wiki/sidebar-teams.json", headers={'User-Agent': USER_AGENT})
+		jsonData = json.loads(resp.text)
+		teamText = jsonData['data']['content_md']
+
+		firstLine = True
+		for teamLine in teamText.splitlines():
+			if firstLine:
+				firstLine = False
+				continue
+			teamArray = teamLine.strip().split('|')
+			if len(teamArray) < 4:
+				log.warning("Couldn't parse team line: " + teamLine)
+				continue
+			team = {'contains': teamArray[0]
+				,'acronym': teamArray[1]
+				,'link': teamArray[2]
+				,'include': True if teamArray[3] == 'include' else False
+			}
+			teams.append(team)
+	except Exception as err:
+		log.warning("Exception parsing schedule")
+		log.warning(traceback.format_exc())
+		skip = True
+
 
 	try:
 		standings = parseTable()
