@@ -325,7 +325,7 @@ while True:
 			strList.append("|\n")
 
 			i += 1
-			if i >= 8:
+			if i >= 11:
 				break
 	except Exception as err:
 		log.warning("Exception parsing schedule")
