@@ -38,7 +38,7 @@ if LOG_FILENAME is not None:
 	log.addHandler(log_fileHandler)
 
 comps = [{'name': 'MLS', 'link': 'http://www.mlssoccer.com/', 'acronym': 'MLS'}
-	,{'name': 'Preseason', 'link': 'http://www.mlssoccer.com/', 'acronym': 'MLS Pre'}
+	,{'name': 'Preseason', 'link': 'http://www.mlssoccer.com/', 'acronym': 'UNK'}
 	,{'name': 'CONCACAF', 'link': 'https://www.facebook.com/concacafcom', 'acronym': 'CCL'}
 ]
 
@@ -184,6 +184,7 @@ def parseSchedule():
 		time = element.xpath(".//*[contains(@class,'match_status')]/text()")
 		if not len(time):
 			log.warning("Couldn't find time for match, skipping")
+			log.warning(match)
 			continue
 
 		if time[0] == "TBD":
@@ -195,11 +196,15 @@ def parseSchedule():
 
 		home = element.xpath(".//*[contains(@class,'home_club')]/*[contains(@class,'club_name')]/text()")
 		if not len(home):
+			log.warning("Couldn't pull home team, skipping")
+			log.warning(match)
 			continue
 		match['home'] = home[0]
 
 		away = element.xpath(".//*[contains(@class,'vs_club')]/*[contains(@class,'club_name')]/text()")
 		if not len(away):
+			log.warning("Couldn't pull away team, skipping")
+			log.warning(match)
 			continue
 		match['away'] = away[0]
 
@@ -211,6 +216,8 @@ def parseSchedule():
 
 		comp = element.xpath(".//*[contains(@class,'match_location_competition')]/text()")
 		if not len(comp):
+			log.warning("Couldn't find comp for match, skipping")
+			log.warning(match)
 			continue
 		match['comp'] = comp[0]
 
@@ -319,6 +326,8 @@ while True:
 			homeLink, homeInclude = getTeamLink(game['home'])
 			awayLink, awayInclude = getTeamLink(game['away'])
 			if not homeInclude and not awayInclude:
+				log.warning("Could not get home/away, skipping")
+				log.warning(game)
 				continue
 
 			if homeLink == "":
