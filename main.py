@@ -38,6 +38,7 @@ if LOG_FILENAME is not None:
 	log.addHandler(log_fileHandler)
 
 comps = [{'name': 'MLS', 'link': 'http://www.mlssoccer.com/', 'acronym': 'MLS'}
+	,{'name': 'Preseason', 'link': 'http://www.mlssoccer.com/', 'acronym': 'MLS Pre'}
 	,{'name': 'CONCACAF', 'link': 'https://www.facebook.com/concacafcom', 'acronym': 'CCL'}
 ]
 
@@ -168,48 +169,67 @@ def parseTable():
 
 
 ### Parse schedule ###
-def parseWeek(date):
-	page = requests.get("http://matchcenter.mlssoccer.com/matches/"+date.strftime("%Y-%m-%d"))
+def parseSchedule():
+	page = requests.get("http://www.mlssoccer.com/schedule")
 	tree = html.fromstring(page.content)
 
 	schedule = []
-	for i, element in enumerate(tree.xpath("//*[contains(@class,'ml-link')]")):
+	date = ""
+	for i, element in enumerate(tree.xpath("//ul[contains(@class,'schedule_list')]/li[contains(@class,'row')]")):
 		match = {}
-		clubNames = element.xpath(".//*[contains(@class,'sb-club-name-full')]/text()")
-		if len(clubNames) < 2:
-			continue
-		match['home'] = clubNames[0]
-		match['away'] = clubNames[1]
+		newDate = element.xpath(".//div[contains(@class,'match_date')]/text()")
+		if len(newDate):
+			date = newDate[0]
 
-		date = element.xpath(".//*[contains(@class,'sb-match-date')]/text()")
-		time = element.xpath(".//*[contains(@class,'sb-match-time')]/text()")
-		if not len(date) or not len(time):
-			continue
-		try:
-			match['datetime'] = datetime.datetime.strptime(date[0]+" "+str(datetime.datetime.now().year)+" "+time[0], "%a, %b %d %Y %I:%M %p ET")
-		except Exception as err:
+		time = element.xpath(".//*[contains(@class,'match_status')]/text()")
+		if not len(time):
+			log.warning("Couldn't find time for match, skipping")
 			continue
 
-		comp = element.xpath(".//*[contains(@class,'sb-match-comp')]/text()")
-		if not len(comp):
-			continue
-		match['comp'] = comp[0]
+		if time[0] == "TBD":
+			match['datetime'] = datetime.datetime.strptime(date, "%A, %B %d, %Y")
+			match['tbd'] = True
+		else:
+			match['datetime'] = datetime.datetime.strptime(date+" "+time[0], "%A, %B %d, %Y %I:%M%p ET")
+			match['tbd'] = False
 
-		tv = element.xpath(".//*[contains(@class,'sb-tv-listing')]/span/text()")
+		home = element.xpath(".//*[contains(@class,'home_club')]/*[contains(@class,'club_name')]/text()")
+		if not len(home):
+			continue
+		match['home'] = home[0]
+
+		away = element.xpath(".//*[contains(@class,'vs_club')]/*[contains(@class,'club_name')]/text()")
+		if not len(away):
+			continue
+		match['away'] = away[0]
+
+		tv = element.xpath(".//*[contains(@class,'match_category')]/*/*/*/text()")
 		if len(tv):
 			match['tv'] = tv[0]
 		else:
 			match['tv'] = ""
 
+		comp = element.xpath(".//*[contains(@class,'match_location_competition')]/text()")
+		if not len(comp):
+			continue
+		match['comp'] = comp[0]
+
 		schedule.append(match)
 
 	return schedule
 
+
+
 log.debug("Connecting to reddit")
 
 once = False
+debug = False
 if len(sys.argv) > 1 and sys.argv[1] == 'once':
-	once = True
+	for arg in sys.argv:
+		if arg == 'once':
+			once = True
+		elif arg == 'debug':
+			debug = True
 
 r = praw.Reddit(user_agent=USER_AGENT, log_request=0)
 o = OAuth2Util.OAuth2Util(r)
@@ -281,10 +301,8 @@ while True:
 
 	try:
 		today = datetime.date.today()
-		lastMonday = today - datetime.timedelta(days=today.weekday())
 
-		schedule = parseWeek(lastMonday)
-		schedule += parseWeek(lastMonday + datetime.timedelta(weeks=1))
+		schedule = parseSchedule()
 
 		strList.append("-----\n")
 		strList.append("#Schedule\n")
@@ -315,7 +333,10 @@ while True:
 				strList.append(game['datetime'].strftime("%m/%d"))
 				strList.append("**|\n")
 
-			strList.append(game['datetime'].strftime("%I:%M"))
+			if game['tbd']:
+				strList.append("TBD")
+			else:
+				strList.append(game['datetime'].strftime("%I:%M"))
 			strList.append(" | ")
 			strList.append(homeLink)
 			strList.append(" | ")
@@ -343,8 +364,11 @@ while True:
 		skip = True
 
 	if not skip:
-		subreddit = r.get_subreddit(SUBREDDIT)
-		subreddit.update_settings(description=baseSidebar+''.join(strList))
+		if debug:
+			log.info(''.join(strList))
+		else:
+			subreddit = r.get_subreddit(SUBREDDIT)
+			subreddit.update_settings(description=baseSidebar+''.join(strList))
 
 	log.debug("Run complete after: %d", int(time.perf_counter() - startTime))
 	if once:
