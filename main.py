@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 import praw
-import OAuth2Util
 import os
 import logging.handlers
 from lxml import html
@@ -11,6 +10,7 @@ import time
 import sys
 import traceback
 import json
+import configparser
 
 ### Config ###
 LOG_FOLDER_NAME = "logs"
@@ -253,9 +253,15 @@ if len(sys.argv) > 1 and sys.argv[1] == 'once':
 		elif arg == 'debug':
 			debug = True
 
-r = praw.Reddit(user_agent=USER_AGENT, log_request=0)
-o = OAuth2Util.OAuth2Util(r)
-o.refresh(force=True)
+config = configparser.ConfigParser()
+config.read('oauth.ini')
+
+r = praw.Reddit(
+	client_id=config['credentials']['client_id'],
+	client_secret=config['credentials']['client_secret'],
+	refresh_token=config['credentials']['refresh_token'],
+	user_agent=USER_AGENT,
+	log_request=0)
 
 while True:
 	startTime = time.perf_counter()
