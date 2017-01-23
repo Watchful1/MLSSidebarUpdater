@@ -118,8 +118,7 @@ def parseTable():
 	for i in range(0, firstConf['size']+secondConf['size']):
 		standings.append({'conf': (firstConf['name'] if i < firstConf['size'] else secondConf['name'])})
 
-	elements = [{'title': 'Club', 'name': 'name'}
-		,{'title': 'Points', 'name': 'points'}
+	elements = [{'title': 'Points', 'name': 'points'}
 		,{'title': 'Games Played', 'name': 'played'}
 		,{'title': 'Goals For', 'name': 'goalsFor'}
 		,{'title': 'Goal Difference', 'name': 'goalDiff'}
@@ -129,6 +128,19 @@ def parseTable():
 	for element in elements:
 		for i, item in enumerate(tree.xpath("//td[@data-title='"+element['title']+"']/text()")):
 			standings[i][element['name']] = item
+
+	for i, item in enumerate(tree.xpath("//td[@data-title='Club']")):
+		names = item.xpath(".//a/text()")
+		if not len(names):
+			log.warning("Couldn't find team name")
+			continue
+		teamName = ""
+		for name in names:
+			if len(name) > len(teamName):
+				teamName = name
+
+		standings[i]['name'] = name
+
 
 	sortedStandings = []
 	firstCount = 0
@@ -191,17 +203,20 @@ def parseSchedule():
 			match['datetime'] = datetime.datetime.strptime(date, "%A, %B %d, %Y")
 			match['tbd'] = True
 		else:
-			match['datetime'] = datetime.datetime.strptime(date+" "+time[0], "%A, %B %d, %Y %I:%M%p ET")
-			match['tbd'] = False
+			try:
+				match['datetime'] = datetime.datetime.strptime(date+" "+time[0], "%A, %B %d, %Y %I:%M%p ET")
+				match['tbd'] = False
+			except Exception as err:
+				continue
 
-		home = element.xpath(".//*[contains(@class,'home_club')]/*[contains(@class,'club_name')]/text()")
+		home = element.xpath(".//*[contains(@class,'home_club')]/*[contains(@class,'club_name')]/*/text()")
 		if not len(home):
 			log.warning("Couldn't pull home team, skipping")
 			log.warning(match)
 			continue
 		match['home'] = home[0]
 
-		away = element.xpath(".//*[contains(@class,'vs_club')]/*[contains(@class,'club_name')]/text()")
+		away = element.xpath(".//*[contains(@class,'vs_club')]/*[contains(@class,'club_name')]/*/text()")
 		if not len(away):
 			log.warning("Couldn't pull away team, skipping")
 			log.warning(match)
@@ -259,6 +274,8 @@ while True:
 		for teamLine in teamText.splitlines():
 			if firstLine:
 				firstLine = False
+				continue
+			if teamLine.strip() == "":
 				continue
 			teamArray = teamLine.strip().split('|')
 			if len(teamArray) < 4:
