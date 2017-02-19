@@ -403,8 +403,8 @@ while True:
 		if debug:
 			log.info(''.join(strList))
 		else:
-			subreddit = r.get_subreddit(SUBREDDIT)
-			subreddit.update_settings(description=baseSidebar+''.join(strList))
+			subreddit = r.subreddit(SUBREDDIT)
+			subreddit.mod.update(description=baseSidebar+''.join(strList))
 
 	log.debug("Run complete after: %d", int(time.perf_counter() - startTime))
 	if once:
