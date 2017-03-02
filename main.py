@@ -68,7 +68,7 @@ def getTeamLink(name):
 
 
 channels = [{'contains': 'ESPN2', 'link': 'http://espn.go.com/watchespn/index/_/sport/soccer-futbol/channel/espn2'}
-    ,{'contains': 'ESPN ', 'link': 'http://www.espn.com/watchespn/index/_/sport/soccer-futbol/channel/espn'}
+    ,{'contains': 'ESPN', 'link': 'http://www.espn.com/watchespn/index/_/sport/soccer-futbol/channel/espn'}
 	,{'contains': 'FS1', 'link': 'http://msn.foxsports.com/foxsports1'}
 	,{'contains': 'UniMás', 'link': 'http://tv.univision.com/unimas'}
 	,{'contains': 'MLS LIVE', 'link': 'http://live.mlssoccer.com/mlsmdl'}
@@ -112,8 +112,8 @@ def parseTable():
 	page = requests.get("http://www.mlssoccer.com/standings")
 	tree = html.fromstring(page.content)
 
-	firstConf = {'name': "E", 'size': 10}
-	secondConf = {'name': "W", 'size': 10}
+	firstConf = {'name': "E", 'size': 11}
+	secondConf = {'name': "W", 'size': 11}
 	standings = []
 	for i in range(0, firstConf['size']+secondConf['size']):
 		standings.append({'conf': (firstConf['name'] if i < firstConf['size'] else secondConf['name'])})
