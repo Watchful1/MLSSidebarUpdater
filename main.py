@@ -70,7 +70,8 @@ def getTeamLink(name):
 channels = [{'contains': 'ESPN2', 'link': 'http://espn.go.com/watchespn/index/_/sport/soccer-futbol/channel/espn2'}
     ,{'contains': 'ESPN', 'link': 'http://www.espn.com/watchespn/index/_/sport/soccer-futbol/channel/espn'}
 	,{'contains': 'FS1', 'link': 'http://msn.foxsports.com/foxsports1'}
-	,{'contains': 'UniMás', 'link': 'http://tv.univision.com/unimas'}
+	,{'contains': 'UDN', 'link': 'http://tv.univision.com/unimas'}
+	,{'contains': 'Univision', 'link': 'http://tv.univision.com/unimas'}
 	,{'contains': 'MLS LIVE', 'link': 'http://live.mlssoccer.com/mlsmdl'}
 ]
 
