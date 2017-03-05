@@ -349,7 +349,7 @@ while True:
 		i = 0
 		lastDate = None
 		for game in schedule:
-			if game['datetime'] < datetime.datetime.now():
+			if game['datetime'] + datetime.timedelta(hours=2) < datetime.datetime.now():
 				continue
 
 			homeLink, homeInclude = getTeamLink(game['home'])
