@@ -17,6 +17,9 @@ LOG_FOLDER_NAME = "logs"
 SUBREDDIT = "mls"
 USER_AGENT = "MLSSideBarUpdater (by /u/Watchful1)"
 
+SUBREDDIT2 = "rbny"
+TEAM_NAME2 = "New York Red Bulls"
+
 ### Logging setup ###
 LOG_LEVEL = logging.DEBUG
 if not os.path.exists(LOG_FOLDER_NAME):
@@ -42,6 +45,11 @@ comps = [{'name': 'MLS', 'link': 'http://www.mlssoccer.com/', 'acronym': 'MLS'}
 	,{'name': 'CONCACAF', 'link': 'https://www.facebook.com/concacafcom', 'acronym': 'CCL'}
 ]
 
+RBNYcomps = [{'name': 'MLS', 'link': '/MLS', 'acronym': 'MLS'}
+	,{'name': 'Preseason', 'link': '/MLS', 'acronym': 'UNK'}
+	,{'name': 'CONCACAF', 'link': 'http://category/champions-league/schedule-results', 'acronym': 'CCL'}
+]
+
 
 def getCompLink(compName):
 	for comp in comps:
@@ -50,7 +58,17 @@ def getCompLink(compName):
 
 	return ""
 
+
+def getRBNYCompLink(compName):
+	for comp in RBNYcomps:
+		if comp['name'] in compName:
+			return comp['link']
+
+	return ""
+
+
 teams = []
+
 
 def matchesTable(table, str):
 	for item in table:
@@ -59,10 +77,13 @@ def matchesTable(table, str):
 	return False
 
 
-def getTeamLink(name):
+def getTeamLink(name, useFullname=False, nameOnly=False):
 	for item in teams:
 		if item['contains'] in name:
-			return ("["+item['acronym']+"]("+item['link']+")", item['include'])
+			if nameOnly:
+				return (item['contains'] if useFullname else item['acronym'])
+			else:
+				return ("["+(item['contains'] if useFullname else item['acronym'])+"]("+item['link']+")", item['include'])
 
 	return ("", False)
 
@@ -70,19 +91,25 @@ def getTeamLink(name):
 channels = [{'contains': 'ESPN2', 'link': 'http://espn.go.com/watchespn/index/_/sport/soccer-futbol/channel/espn2'}
     ,{'contains': 'ESPN', 'link': 'http://www.espn.com/watchespn/index/_/sport/soccer-futbol/channel/espn'}
 	,{'contains': 'FS1', 'link': 'http://msn.foxsports.com/foxsports1'}
+	,{'contains': 'FS2', 'link': 'https://en.wikipedia.org/wiki/Fox_Sports_2'}
 	,{'contains': 'UDN', 'link': 'http://www.univision.com/deportes/futbol/mls'}
 	,{'contains': 'Univision', 'link': 'http://www.univision.com/deportes/futbol/mls'}
 	,{'contains': 'UniMás', 'link': 'http://tv.univision.com/unimas'}
+	,{'contains': 'facebook.com', 'link': 'http://www.live.fb.com/'}
+	,{'contains': 'FOX', 'link': 'http://www.fox.com/'}
+	,{'contains': 'beIN', 'link': 'http://www.beinsport.tv/'}
 	,{'contains': 'MLS LIVE', 'link': 'http://live.mlssoccer.com/mlsmdl'}
 ]
 
 
 def getChannelLink(name):
+	strList = []
 	for item in channels:
 		if item['contains'] in name:
-			return "[]("+item['link']+")"
+			if (len(strList) == 0) or (len(strList) < 2 and item['contains'] != "MLS LIVE"):
+				strList.append("[]("+item['link']+")")
 
-	return ""
+	return ''.join(strList)
 
 
 ### Parse table ###
@@ -182,6 +209,33 @@ def parseTable():
 	return sortedStandings
 
 
+def printTable(standings):
+	strList = []
+	strList.append("**[Standings](http://www.mlssoccer.com/standings)**\n\n")
+	strList.append("*")
+	strList.append(datetime.datetime.now().strftime("%m/%d/%y"))
+	strList.append("*\n\n")
+	strList.append("Pos | Team | Pts | GP | GF | GD\n")
+	strList.append(":--:|:--:|:--:|:--:|:--:|:--:\n")
+
+	for team in standings:
+		strList.append(team['ranking'])
+		strList.append(" | ")
+		strList.append(getTeamLink(team['name'])[0])
+		strList.append(" | **")
+		strList.append(team['points'])
+		strList.append("** | ")
+		strList.append(team['played'])
+		strList.append(" | ")
+		strList.append(team['goalsFor'])
+		strList.append(" | ")
+		strList.append(team['goalDiff'])
+		strList.append(" |\n")
+
+	strList.append("\n\n\n")
+	return strList
+
+
 ### Parse schedule ###
 def parseSchedule():
 	page = requests.get("http://www.mlssoccer.com/schedule")
@@ -201,7 +255,7 @@ def parseSchedule():
 			log.warning(match)
 			continue
 
-		if time[0] == "TBD":
+		if time[0] == "TBD" or time[0] == "FINAL":
 			match['datetime'] = datetime.datetime.strptime(date, "%A, %B %d, %Y")
 			match['tbd'] = True
 		else:
@@ -218,12 +272,24 @@ def parseSchedule():
 			continue
 		match['home'] = home[0]
 
+		homeScore = element.xpath(".//*[contains(@class,'home_club')]/*[contains(@class,'match_score')]/text()")
+		if len(homeScore):
+			match['homeScore'] = homeScore[0]
+		else:
+			match['homeScore'] = -1
+
 		away = element.xpath(".//*[contains(@class,'vs_club')]/*[contains(@class,'club_name')]/*/text()")
 		if not len(away):
 			log.warning("Couldn't pull away team, skipping")
 			log.warning(match)
 			continue
 		match['away'] = away[0]
+
+		awayScore = element.xpath(".//*[contains(@class,'vs_club')]/*[contains(@class,'match_score')]/text()")
+		if len(awayScore):
+			match['awayScore'] = awayScore[0]
+		else:
+			match['awayScore'] = -1
 
 		tv = element.xpath(".//*[contains(@class,'match_category')]/*/*/*/text()")
 		if len(tv):
@@ -241,7 +307,6 @@ def parseSchedule():
 		schedule.append(match)
 
 	return schedule
-
 
 
 log.debug("Connecting to reddit")
@@ -273,7 +338,8 @@ while True:
 	startTime = time.perf_counter()
 	log.debug("Starting run")
 
-	strList = []
+	strListMLS = []
+	strListRBNY = []
 	skip = False
 
 	teams = []
@@ -299,37 +365,94 @@ while True:
 				,'include': True if teamArray[3] == 'include' else False
 			}
 			teams.append(team)
+
+		schedule = parseSchedule()
+		standings = parseTable()
 	except Exception as err:
 		log.warning("Exception parsing schedule")
 		log.warning(traceback.format_exc())
 		skip = True
 
+	try:
+		teamGames = []
+		nextGameIndex = -1
+		for game in schedule:
+			if game['home'] == TEAM_NAME2 or game['away'] == TEAM_NAME2:
+				teamGames.append(game)
+				if game['datetime'] + datetime.timedelta(hours=2) > datetime.datetime.now() and nextGameIndex == -1:
+					nextGameIndex = len(teamGames) - 1
+
+		strListRBNY.append("##Upcoming Events\n\n")
+		strListRBNY.append("Description|Time (ET)|TV\n")
+		strListRBNY.append("---|---:|:---:|---|\n")
+		for game in teamGames[nextGameIndex:nextGameIndex+4]:
+			strListRBNY.append("**")
+			strListRBNY.append(game['datetime'].strftime("%m/%d"))
+			strListRBNY.append("**[](")
+			strListRBNY.append(getRBNYCompLink(game['comp']))
+			strListRBNY.append(")||")
+			if game['home'] == TEAM_NAME2:
+				strListRBNY.append("**Home**|\n")
+				homeLink, homeInclude = getTeamLink(game['away'], True)
+				strListRBNY.append(homeLink)
+			else:
+				strListRBNY.append("*Away*|\n")
+				awayLink, awayInclude = getTeamLink(game['home'], True)
+				strListRBNY.append(awayLink)
+			strListRBNY.append("|")
+			if game['tbd']:
+				strListRBNY.append("TBD")
+			else:
+				strListRBNY.append(game['datetime'].strftime("%I:%M"))
+			strListRBNY.append("|")
+			strListRBNY.append(getChannelLink(game['tv']))
+			strListRBNY.append("|\n")
+
+		strListRBNY.append("\n\n")
+		strListRBNY.append("##Previous Results\n\n")
+		strListRBNY.append("Date|Home|Result|Away\n")
+		strListRBNY.append(":---:|:---:|:---:|:---:|\n")
+
+		for game in reversed(teamGames[nextGameIndex-4:nextGameIndex]):
+			strListRBNY.append("[")
+			strListRBNY.append(game['datetime'].strftime("%m/%d"))
+			strListRBNY.append("](")
+			strListRBNY.append(getRBNYCompLink(game['comp']))
+			strListRBNY.append(")|")
+			if game['home'] == TEAM_NAME2:
+				RBNYHome = True
+			else:
+				RBNYHome = False
+			if RBNYHome:
+				strListRBNY.append("**")
+			strListRBNY.append(getTeamLink(game['home'], True, True))
+			if RBNYHome:
+				strListRBNY.append("**")
+			strListRBNY.append("|")
+			strListRBNY.append(game['homeScore'])
+			strListRBNY.append("-")
+			strListRBNY.append(game['awayScore'])
+			strListRBNY.append("|")
+			if not RBNYHome:
+				strListRBNY.append("**")
+			strListRBNY.append(getTeamLink(game['away'], True, True))
+			if not RBNYHome:
+				strListRBNY.append("**")
+			strListRBNY.append("\n")
+
+		strListRBNY.append("\n\n")
+		strListRBNY.append("## MLS Standings\n\n")
+
+
+	except Exception as err:
+		log.warning("Exception parsing table")
+		log.warning(traceback.format_exc())
+		skip = True
 
 	try:
-		standings = parseTable()
-
-		strList.append("**[Standings](http://www.mlssoccer.com/standings)**\n\n")
-		strList.append("*")
-		strList.append(datetime.datetime.now().strftime("%m/%d/%y"))
-		strList.append("*\n\n")
-		strList.append("Pos | Team | Pts | GP | GF | GD\n")
-		strList.append(":--:|:--:|:--:|:--:|:--:|:--:\n")
-
-		for team in standings:
-			strList.append(team['ranking'])
-			strList.append(" | ")
-			strList.append(getTeamLink(team['name'])[0])
-			strList.append(" | **")
-			strList.append(team['points'])
-			strList.append("** | ")
-			strList.append(team['played'])
-			strList.append(" | ")
-			strList.append(team['goalsFor'])
-			strList.append(" | ")
-			strList.append(team['goalDiff'])
-			strList.append(" |\n")
-
-		strList.append("\n\n\n")
+		mlsTable = printTable(standings)
+		strListMLS.extend(mlsTable)
+		strListRBNY.extend(mlsTable)
 	except Exception as err:
 		log.warning("Exception parsing table")
 		log.warning(traceback.format_exc())
@@ -338,13 +461,11 @@ while True:
 	try:
 		today = datetime.date.today()
 
-		schedule = parseSchedule()
-
-		strList.append("-----\n")
-		strList.append("#Schedule\n")
-		strList.append("*All times ET*\n\n")
-		strList.append("Time | Home | Away | TV\n")
-		strList.append(":--:|:--:|:--:|:--:|\n")
+		strListMLS.append("-----\n")
+		strListMLS.append("#Schedule\n")
+		strListMLS.append("*All times ET*\n\n")
+		strListMLS.append("Time | Home | Away | TV\n")
+		strListMLS.append(":--:|:--:|:--:|:--:|\n")
 
 		i = 0
 		lastDate = None
@@ -367,21 +488,21 @@ while True:
 
 			if lastDate != game['datetime'].date():
 				lastDate = game['datetime'].date()
-				strList.append("**")
-				strList.append(game['datetime'].strftime("%m/%d"))
-				strList.append("**|\n")
+				strListMLS.append("**")
+				strListMLS.append(game['datetime'].strftime("%m/%d"))
+				strListMLS.append("**|\n")
 
 			if game['tbd']:
-				strList.append("TBD")
+				strListMLS.append("TBD")
 			else:
-				strList.append(game['datetime'].strftime("%I:%M"))
-			strList.append(" | ")
-			strList.append(homeLink)
-			strList.append(" | ")
-			strList.append(awayLink)
-			strList.append(" | ")
-			strList.append(getChannelLink(game['tv']))
-			strList.append("|\n")
+				strListMLS.append(game['datetime'].strftime("%I:%M"))
+			strListMLS.append(" | ")
+			strListMLS.append(homeLink)
+			strListMLS.append(" | ")
+			strListMLS.append(awayLink)
+			strListMLS.append(" | ")
+			strListMLS.append(getChannelLink(game['tv']))
+			strListMLS.append("|\n")
 
 			i += 1
 			if i >= 11:
@@ -402,11 +523,28 @@ while True:
 		skip = True
 
 	if not skip:
+		try:
+			log.debug(r.auth.scopes())
+			subreddit2 = r.subreddit(SUBREDDIT2)
+			description = subreddit2.description
+			begin = description[0:description.find("##Upcoming Events")]
+			end = description[description.find("##NYRB II (USL)"):]
+			skipNYRB = False
+		except Exception as err:
+			log.warning("Broken rbny sidebar")
+			log.warning(traceback.format_exc())
+			skipNYRB = True
 		if debug:
-			log.info(''.join(strList))
+			log.info(''.join(strListMLS))
+			log.info("\n\nRBNY\n\n")
+			log.info(begin+''.join(strListRBNY)+end)
 		else:
+			if not skipNYRB:
+				subreddit2.mod.update(description=begin+''.join(strListRBNY)+end)
 			subreddit = r.subreddit(SUBREDDIT)
-			subreddit.mod.update(description=baseSidebar+''.join(strList))
+			subreddit.mod.update(description=baseSidebar+''.join(strListMLS))
+
+
 
 	log.debug("Run complete after: %d", int(time.perf_counter() - startTime))
 	if once:
