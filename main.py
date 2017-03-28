@@ -524,7 +524,6 @@ while True:
 
 	if not skip:
 		try:
-			log.debug(r.auth.scopes())
 			subreddit2 = r.subreddit(SUBREDDIT2)
 			description = subreddit2.description
 			begin = description[0:description.find("##Upcoming Events")]
@@ -539,10 +538,14 @@ while True:
 			log.info("\n\nRBNY\n\n")
 			log.info(begin+''.join(strListRBNY)+end)
 		else:
-			if not skipNYRB:
-				subreddit2.mod.update(description=begin+''.join(strListRBNY)+end)
-			subreddit = r.subreddit(SUBREDDIT)
-			subreddit.mod.update(description=baseSidebar+''.join(strListMLS))
+			try:
+				if not skipNYRB:
+					subreddit2.mod.update(description=begin+''.join(strListRBNY)+end)
+				subreddit = r.subreddit(SUBREDDIT)
+				subreddit.mod.update(description=baseSidebar+''.join(strListMLS))
+			except Exception as err:
+				log.warning("Exception updating sidebar")
+				log.warning(traceback.format_exc())
 
 
 
