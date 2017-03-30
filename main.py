@@ -100,14 +100,15 @@ channels = [{'contains': 'ESPN2', 'link': 'http://espn.go.com/watchespn/index/_/
 	,{'contains': 'beIN', 'link': 'http://www.beinsport.tv/'}
 	,{'contains': 'MLS LIVE', 'link': 'http://live.mlssoccer.com/mlsmdl'}
 ]
+msgLink = 'http://www.msgnetworks.com/teams/red-bulls/'
 
 
-def getChannelLink(name):
+def getChannelLink(name, replaceMLSLive=False):
 	strList = []
 	for item in channels:
-		if item['contains'] in name:
+		if item['contains'] in name and (item['contains'] != 'FOX' or 'Deportes' not in name):
 			if (len(strList) == 0) or (len(strList) < 2 and item['contains'] != "MLS LIVE"):
-				strList.append("[]("+item['link']+")")
+				strList.append("[]("+(msgLink if replaceMLSLive and item['contains'] else item['link'])+")")
 
 	return ''.join(strList)
 
@@ -405,7 +406,7 @@ while True:
 			else:
 				strListRBNY.append(game['datetime'].strftime("%I:%M"))
 			strListRBNY.append("|")
-			strListRBNY.append(getChannelLink(game['tv']))
+			strListRBNY.append(getChannelLink(game['tv'], True))
 			strListRBNY.append("|\n")
 
 		strListRBNY.append("\n\n")
