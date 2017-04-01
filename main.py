@@ -88,18 +88,18 @@ def getTeamLink(name, useFullname=False, nameOnly=False):
 	return ("", False)
 
 
-channels = [{'contains': 'ESPN2', 'link': 'http://espn.go.com/watchespn/index/_/sport/soccer-futbol/channel/espn2', 'exact': True}
-    ,{'contains': 'ESPN', 'link': 'http://www.espn.com/watchespn/index/_/sport/soccer-futbol/channel/espn', 'exact': True}
-	,{'contains': 'FS1', 'link': 'http://msn.foxsports.com/foxsports1', 'exact': False}
-	,{'contains': 'FS2', 'link': 'https://en.wikipedia.org/wiki/Fox_Sports_2', 'exact': False}
-	,{'contains': 'UDN', 'link': 'http://www.univision.com/deportes/futbol/mls', 'exact': False}
-	,{'contains': 'Univision', 'link': 'http://www.univision.com/deportes/futbol/mls', 'exact': False}
-	,{'contains': 'UniMás', 'link': 'http://tv.univision.com/unimas', 'exact': False}
-	,{'contains': 'facebook.com', 'link': 'http://www.live.fb.com/', 'exact': False}
-	,{'contains': 'FOX', 'link': 'http://www.fox.com/', 'exact': True}
-	,{'contains': 'beIN', 'link': 'http://www.beinsport.tv/', 'exact': False}
-	,{'contains': 'TSN', 'link': '#tsn', 'exact': False}
-	,{'contains': 'MLS LIVE', 'link': 'http://live.mlssoccer.com/mlsmdl', 'exact': False}
+channels = [{'contains': 'ESPN2', 'link': 'http://espn.go.com/watchespn/index/_/sport/soccer-futbol/channel/espn2', 'exact': True, 'allowMLS': False}
+    ,{'contains': 'ESPN', 'link': 'http://www.espn.com/watchespn/index/_/sport/soccer-futbol/channel/espn', 'exact': True, 'allowMLS': False}
+	,{'contains': 'FS1', 'link': 'http://msn.foxsports.com/foxsports1', 'exact': False, 'allowMLS': False}
+	,{'contains': 'FS2', 'link': 'https://en.wikipedia.org/wiki/Fox_Sports_2', 'exact': False, 'allowMLS': False}
+	,{'contains': 'UDN', 'link': 'http://www.univision.com/deportes/futbol/mls', 'exact': False, 'allowMLS': False}
+	,{'contains': 'Univision', 'link': 'http://www.univision.com/deportes/futbol/mls', 'exact': False, 'allowMLS': False}
+	,{'contains': 'UniMás', 'link': 'http://tv.univision.com/unimas', 'exact': False, 'allowMLS': False}
+	,{'contains': 'facebook.com', 'link': 'http://www.live.fb.com/', 'exact': False, 'allowMLS': True}
+	,{'contains': 'FOX', 'link': 'http://www.fox.com/', 'exact': True, 'allowMLS': False}
+	,{'contains': 'beIN', 'link': 'http://www.beinsport.tv/', 'exact': False, 'allowMLS': True}
+	,{'contains': 'TSN', 'link': '#tsn', 'exact': False, 'allowMLS': True}
+	,{'contains': 'MLS LIVE', 'link': 'http://live.mlssoccer.com/mlsmdl', 'exact': False, 'allowMLS': True}
 ]
 msgLink = 'http://www.msgnetworks.com/teams/red-bulls/'
 
@@ -107,13 +107,16 @@ msgLink = 'http://www.msgnetworks.com/teams/red-bulls/'
 def getChannelLink(name, replaceMLSLive=False):
 	stations = name.split(',')
 	strList = []
+	allowMLS = True
 	for item in channels:
 		for station in stations:
-			if len(strList) < 3 or (len(strList) < 6 and item['contains'] != "MLS LIVE"):
+			if len(strList) < 3 or (len(strList) < 6 and (item['contains'] != "MLS LIVE" or allowMLS)):
 				if (item['exact'] and item['contains'] == station.strip()) or (not item['exact'] and item['contains'] in station):
 					strList.append("[](")
 					strList.append(msgLink if replaceMLSLive and item['contains'] == "MLS LIVE" else item['link'])
 					strList.append(")")
+					if not item['allowMLS']:
+						allowMLS = False
 
 	return ''.join(strList)
 
