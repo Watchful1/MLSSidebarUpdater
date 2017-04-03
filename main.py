@@ -107,16 +107,19 @@ msgLink = 'http://www.msgnetworks.com/teams/red-bulls/'
 def getChannelLink(name, replaceMLSLive=False):
 	stations = name.split(',')
 	strList = []
+	included = set()
 	allowMLS = True
 	for item in channels:
 		for station in stations:
-			if len(strList) < 3 or (len(strList) < 6 and (item['contains'] != "MLS LIVE" or allowMLS)):
-				if (item['exact'] and item['contains'] == station.strip()) or (not item['exact'] and item['contains'] in station):
-					strList.append("[](")
-					strList.append(msgLink if replaceMLSLive and item['contains'] == "MLS LIVE" else item['link'])
-					strList.append(")")
-					if not item['allowMLS']:
-						allowMLS = False
+			if item['contains'] not in included:
+				if len(strList) < 3 or (len(strList) < 6 and (item['contains'] != "MLS LIVE" or allowMLS)):
+					if (item['exact'] and item['contains'] == station.strip()) or (not item['exact'] and item['contains'] in station):
+						included.add(item['contains'])
+						strList.append("[](")
+						strList.append(msgLink if replaceMLSLive and item['contains'] == "MLS LIVE" else item['link'])
+						strList.append(")")
+						if not item['allowMLS']:
+							allowMLS = False
 
 	return ''.join(strList)
 
