@@ -250,7 +250,7 @@ def printTable(standings):
 
 ### Parse schedule ###
 def parseSchedule():
-	page = requests.get("http://www.mlssoccer.com/schedule")
+	page = requests.get("https://www.mlssoccer.com/schedule?month=all&year=2017")
 	tree = html.fromstring(page.content)
 
 	schedule = []
