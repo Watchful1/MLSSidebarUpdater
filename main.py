@@ -267,13 +267,19 @@ def parseSchedule():
 			log.warning(match)
 			continue
 
-		if time[0] == "TBD" or time[0] == "FINAL":
+		if time[0] == "TBD":
 			match['datetime'] = datetime.datetime.strptime(date, "%A, %B %d, %Y")
-			match['tbd'] = True
+			match['status'] = 'tbd'
+		elif time[0] == "FINAL":
+			match['datetime'] = datetime.datetime.strptime(date, "%A, %B %d, %Y")
+			match['status'] = 'final'
+		elif "LIVE" in time[0]:
+			match['datetime'] = datetime.datetime.strptime(date, "%A, %B %d, %Y")
+			match['status'] = 'live'
 		else:
 			try:
 				match['datetime'] = datetime.datetime.strptime(date+" "+time[0], "%A, %B %d, %Y %I:%M%p ET")
-				match['tbd'] = False
+				match['status'] = ''
 			except Exception as err:
 				continue
 
@@ -412,7 +418,7 @@ while True:
 				awayLink, awayInclude = getTeamLink(game['home'], True)
 				strListRBNY.append(awayLink)
 			strListRBNY.append("|")
-			if game['tbd']:
+			if game['status'] == 'tbd':
 				strListRBNY.append("TBD")
 			else:
 				strListRBNY.append(game['datetime'].strftime("%I:%M"))
@@ -482,7 +488,7 @@ while True:
 		i = 0
 		lastDate = None
 		for game in schedule:
-			if game['datetime'] + datetime.timedelta(hours=2) < datetime.datetime.now():
+			if game['datetime'].date() < datetime.datetime.now().date():
 				continue
 
 			homeLink, homeInclude = getTeamLink(game['home'])
@@ -504,8 +510,12 @@ while True:
 				strListMLS.append(game['datetime'].strftime("%m/%d"))
 				strListMLS.append("**|\n")
 
-			if game['tbd']:
+			if game['status'] == 'tbd':
 				strListMLS.append("TBD")
+			elif game['status'] == 'live':
+				strListMLS.append("LIVE")
+			elif game['status'] == 'final':
+				strListMLS.append("FINAL")
 			else:
 				strListMLS.append(game['datetime'].strftime("%I:%M"))
 			strListMLS.append(" | ")
