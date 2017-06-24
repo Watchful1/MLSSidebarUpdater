@@ -249,7 +249,7 @@ def printTable(standings):
 
 
 ### Parse schedule ###
-def parseSchedule():
+def parseScheduleOld():
 	page = requests.get("https://www.mlssoccer.com/schedule?month=all&year=2017")
 	tree = html.fromstring(page.content)
 
@@ -321,6 +321,74 @@ def parseSchedule():
 			log.warning(match)
 			continue
 		match['comp'] = comp[0]
+
+		schedule.append(match)
+
+	return schedule
+
+
+### Parse schedule ###
+def parseSchedule():
+	page = requests.get("https://www.mlssoccer.com/")
+	tree = html.fromstring(page.content)
+
+	schedule = []
+	for i, element in enumerate(tree.xpath("//*[@id='scoreboard-0']/div/div/div/a")):
+		match = {}
+		rawDate = element.xpath(".//div[@class='scoreboard-date-status']/span[@class='scoreboard-date']/text()")
+		if len(rawDate):
+			date = rawDate[0]
+		else:
+			log.debug("Could not find date")
+			log.debug(match)
+
+		rawTime = element.xpath(".//div[@class='scoreboard-date-status']/span[contains(@class,'scoreboard-date-time')]/text()")
+		if len(rawTime):
+			time = rawTime[0]
+		else:
+			log.debug("Could not find time")
+			log.debug(match)
+
+		match['datetime'] = datetime.datetime.strptime(date + datetime.datetime.now().strftime("/%y") + " " + time, "%m/%d/%y %I:%M%p")
+
+		rawStatus = element.xpath(".//div[@class='scoreboard-date-status']/span[@class='scoreboard-match-period']/text()")
+		if len(rawStatus):
+			if rawStatus[0] == 'FINAL':
+				match['status'] = 'final'
+			else:
+				match['status'] = ""
+		else:
+			match['status'] = ""
+
+
+		rawHome = element.xpath(".//div[@class='scoreboard-clubs']/div/div[contains(@class,'scoreboard-home')]/span[@class='scoreboard-club-full']/text()")
+		if len(rawHome):
+			match['home'] = rawHome[0]
+		else:
+			log.debug("Could not find home")
+			log.debug(match)
+
+		rawAway = element.xpath(".//div[@class='scoreboard-clubs']/div/div[contains(@class,'scoreboard-away')]/span[@class='scoreboard-club-full']/text()")
+		if len(rawAway):
+			match['away'] = rawAway[0]
+		else:
+			log.debug("Could not find away")
+			log.debug(match)
+
+		rawComp = element.xpath(".//div[@class='scoreboard-competition']/text()")
+		if len(rawComp):
+			match['comp'] = rawComp[0]
+		else:
+			log.debug("Could not find comp")
+			log.debug(match)
+
+		rawTV = element.xpath(".//div[@class='scoreboard-broadcast']/text()")
+		if len(rawTV):
+			match['tv'] = rawTV[0]
+		else:
+			match['tv'] = ""
+
+		#log.debug(match)
 
 		schedule.append(match)
 
