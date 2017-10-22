@@ -336,16 +336,21 @@ def parseSchedule():
 			log.debug("Could not find time")
 			log.debug(match)
 
-		match['datetime'] = datetime.datetime.strptime(date + datetime.datetime.now().strftime("/%y") + " " + time, "%m/%d/%y %I:%M%p")
+		if "TBD" in time:
+			match['datetime'] = datetime.datetime.strptime(date + datetime.datetime.now().strftime("/%y"), "%m/%d/%y")
+			match['status'] = 'tbd'
+		else:
+			match['datetime'] = datetime.datetime.strptime(date + datetime.datetime.now().strftime("/%y") + " " + time, "%m/%d/%y %I:%M%p")
 
-		rawStatus = element.xpath(".//div[@class='scoreboard-date-status']/span[@class='scoreboard-match-period']/text()")
-		if len(rawStatus):
-			if rawStatus[0] == 'FINAL':
-				match['status'] = 'final'
+			rawStatus = element.xpath(".//div[@class='scoreboard-date-status']/span[@class='scoreboard-match-period']/text()")
+			if len(rawStatus):
+				if rawStatus[0] == 'FINAL':
+					match['status'] = 'final'
+				else:
+					match['status'] = ""
 			else:
 				match['status'] = ""
-		else:
-			match['status'] = ""
+
 
 
 		rawHome = element.xpath(".//div[@class='scoreboard-clubs']/div/div[contains(@class,'scoreboard-home')]/span[@class='scoreboard-club-full']/text()")
