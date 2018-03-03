@@ -141,7 +141,7 @@ def parseTable():
 	tree = html.fromstring(page.content)
 
 	firstConf = {'name': "E", 'size': 11}
-	secondConf = {'name': "W", 'size': 11}
+	secondConf = {'name': "W", 'size': 12}
 	standings = []
 	for i in range(0, firstConf['size']+secondConf['size']):
 		standings.append({'conf': (firstConf['name'] if i < firstConf['size'] else secondConf['name'])})
@@ -158,7 +158,7 @@ def parseTable():
 			standings[i][element['name']] = item
 
 	for i, item in enumerate(tree.xpath("//td[@data-title='Club']")):
-		names = item.xpath(".//a/text()")
+		names = item.xpath(".//a/span/text()")
 		if not len(names):
 			log.warning("Couldn't find team name")
 			continue
