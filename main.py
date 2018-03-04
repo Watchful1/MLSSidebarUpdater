@@ -61,9 +61,9 @@ def matchesTable(table, str):
 	return False
 
 
-def getTeamLink(name, useFullname=False, nameOnly=False):
+def getTeamLink(name, nameShort="", useFullname=False, nameOnly=False):
 	for item in teams:
-		if item['contains'] in name:
+		if item['contains'] in name or item['contains'] in nameShort:
 			if nameOnly:
 				return (item['contains'] if useFullname else item['acronym'])
 			else:
@@ -136,6 +136,7 @@ def compareTeams(team1, team2):
 					log.error("Ran out of tiebreakers")
 					return True
 
+
 def parseTable():
 	page = requests.get("http://www.mlssoccer.com/standings")
 	tree = html.fromstring(page.content)
@@ -163,11 +164,14 @@ def parseTable():
 			log.warning("Couldn't find team name")
 			continue
 		teamName = ""
+		teamNameShort = ""
 		for name in names:
 			if len(name) > len(teamName):
+				teamNameShort = teamName
 				teamName = name
 
 		standings[i]['name'] = name
+		standings[i]['nameShort'] = teamNameShort
 
 
 	sortedStandings = []
@@ -220,7 +224,7 @@ def printTable(standings):
 	for team in standings:
 		strList.append(team['ranking'])
 		strList.append(" | ")
-		strList.append(getTeamLink(team['name'])[0])
+		strList.append(getTeamLink(team['name'], team['nameShort'])[0])
 		strList.append(" | **")
 		strList.append(team['points'])
 		strList.append("** | ")
@@ -350,8 +354,6 @@ def parseSchedule():
 					match['status'] = ""
 			else:
 				match['status'] = ""
-
-
 
 		rawHome = element.xpath(".//div[@class='scoreboard-clubs']/div/div[contains(@class,'scoreboard-home')]/span[@class='scoreboard-club-full']/text()")
 		if len(rawHome):
