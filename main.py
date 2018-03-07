@@ -80,7 +80,7 @@ channels = [{'contains': 'ESPN2', 'link': 'http://espn.go.com/watchespn/index/_/
 	,{'contains': 'FS1', 'link': 'http://msn.foxsports.com/foxsports1', 'exact': False, 'allowMLS': False}
 	,{'contains': 'FS2', 'link': 'https://en.wikipedia.org/wiki/Fox_Sports_2', 'exact': False, 'allowMLS': False}
 	,{'contains': 'UDN', 'link': 'http://www.univision.com/deportes/futbol/mls', 'exact': False, 'allowMLS': False}
-	,{'contains': 'Univision', 'link': 'http://www.univision.com/deportes/futbol/mls', 'exact': True, 'allowMLS': False}
+	,{'contains': 'Univision', 'link': 'http://www.univision.com/deportes/futbol/mls', 'exact': False, 'allowMLS': False}
 	,{'contains': 'UniMás', 'link': 'http://tv.univision.com/unimas', 'exact': False, 'allowMLS': False}
 	,{'contains': 'facebook.com', 'link': 'http://www.live.fb.com/', 'exact': False, 'allowMLS': True}
 	,{'contains': 'FOX', 'link': 'http://www.fox.com/', 'exact': True, 'allowMLS': False}
